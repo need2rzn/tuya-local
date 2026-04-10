@@ -21,6 +21,7 @@ from .const import (
     API_PROTOCOL_VERSIONS,
     CONF_DEVICE_CID,
     CONF_DEVICE_ID,
+    CONF_KEEP_LAST_STATE,
     CONF_LOCAL_KEY,
     CONF_MANUFACTURER,
     CONF_MODEL,
@@ -53,6 +54,7 @@ class TuyaLocalDevice(object):
         poll_only=False,
         manufacturer=None,
         model=None,
+        keep_last_state=False,
     ):
         """
         Represents a Tuya-based device.
@@ -68,6 +70,8 @@ class TuyaLocalDevice(object):
             poll_only (bool): True if the device should be polled only.
             manufacturer (str | None): The device manufacturer, if known.
             model (str | None): The device model, if known.
+            keep_last_state (bool): Preserve the last valid state for devices
+                that sleep between updates instead of clearing the cache.
         """
         self._name = name
         self._manufacturer = manufacturer
@@ -135,8 +139,10 @@ class TuyaLocalDevice(object):
         self._refresh_task = None
         self._protocol_configured = protocol_version
         self._poll_only = poll_only
+        self._keep_last_state = keep_last_state
         self._temporary_poll = False
         self._reset_cached_state()
+        self._last_connection_failed = False
 
         self._hass = hass
 
@@ -193,7 +199,8 @@ class TuyaLocalDevice(object):
             EVENT_HOMEASSISTANT_STOP, self.async_stop
         )
         if not self._refresh_task:
-            self._refresh_task = self._hass.async_create_task(self.receive_loop())
+            self._refresh_task = self._hass.async_create_task(
+                self.receive_loop())
 
     def start(self):
         if self._hass.is_stopping:
@@ -358,6 +365,8 @@ class TuyaLocalDevice(object):
                         full_poll = True
                     self._last_full_poll = now
                     last_heartbeat = now  # reset heartbeat timer on full poll
+                    if poll is None and self._last_connection_failed:
+                        force_backoff = True
                 elif persist:
                     if now - last_heartbeat > self._HEARTBEAT_INTERVAL:
                         await self._hass.async_add_executor_job(
@@ -365,13 +374,10 @@ class TuyaLocalDevice(object):
                             True,
                         )
                         last_heartbeat = now
+
                     poll = await self._hass.async_add_executor_job(
                         self._api.receive,
                     )
-                    # Ignore Payload error 904, as 3.4 protocol devices seem to return
-                    # this when there is no new data, instead of just returning nothing.
-                    if poll and "Err" in poll and poll["Err"] == 904:
-                        poll = None
                 else:
                     force_backoff = True
                     poll = None
@@ -516,17 +522,30 @@ class TuyaLocalDevice(object):
         """
         self._cached_state[dps_id] = value
 
-    def _reset_cached_state(self):
-        self._cached_state = {"updated_at": 0}
+    def _reset_cached_state(self, preserve_last_state=False):
+        now = time()
+        preserved_state = {}
+        if preserve_last_state:
+            preserved_state = {
+                key: value
+                for key, value in self._cached_state.items()
+                if key != "updated_at"
+            }
+
+        self._cached_state = {
+            **preserved_state,
+            "updated_at": now if preserved_state else 0,
+        }
         self._pending_updates = {}
         self._last_connection = 0
-        self._last_full_poll = 0
+        self._last_full_poll = now if preserved_state else 0
 
     def _refresh_cached_state(self):
         new_state = self._api.status()
         if new_state:
             if "Err" not in new_state:
-                self._cached_state = self._cached_state | new_state.get("dps", {})
+                self._cached_state = self._cached_state | new_state.get(
+                    "dps", {})
                 self._cached_state["updated_at"] = time()
                 for entity in self._children:
                     for dp in entity._config.dps():
@@ -633,6 +652,7 @@ class TuyaLocalDevice(object):
             self._lock.release()
 
     async def _retry_on_failed_connection(self, func, error_message):
+        self._last_connection_failed = False
         if self._api_protocol_version_index is None:
             await self._rotate_api_protocol_version()
         auto = (self._protocol_configured == "auto") and (
@@ -662,6 +682,7 @@ class TuyaLocalDevice(object):
                             raise AttributeError(retval["Error"])
                     self._api_protocol_working = True
                     self._api_working_protocol_failures = 0
+                    self._last_connection_failed = False
                     return retval
             except Exception as e:
                 _LOGGER.debug(
@@ -673,7 +694,11 @@ class TuyaLocalDevice(object):
                 )
 
                 if i + 1 == connections:
-                    self._reset_cached_state()
+                    preserve_state = self._keep_last_state and any(
+                        key != "updated_at" for key in self._cached_state
+                    )
+                    self._reset_cached_state(preserve_state)
+                    self._last_connection_failed = True
                     self._api_working_protocol_failures += 1
                     if (
                         self._api_working_protocol_failures
@@ -785,6 +810,7 @@ def setup_device(hass: HomeAssistant, config: dict):
         config[CONF_POLL_ONLY],
         manufacturer=config.get(CONF_MANUFACTURER),
         model=config.get(CONF_MODEL),
+        keep_last_state=config.get(CONF_KEEP_LAST_STATE, False),
     )
     hass.data[DOMAIN][get_device_id(config)] = {
         "device": device,

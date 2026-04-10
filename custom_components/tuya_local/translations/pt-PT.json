@@ -41,6 +41,7 @@
                     "local_key": "Chave Local",
                     "protocol_version": "Versão do protocolo (tente auto se não souber)",
                     "poll_only": "Pesquisar (experimente isto se o seu dispositivo não funcionar totalmente)",
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices",
                     "device_cid": "node_id ou uuid do sub-dispositivo (para dispositivos conectados via gateway)"
                 }
             },
@@ -95,7 +96,8 @@
                     "host": "Endereço IP ou nome do host",
                     "local_key": "Chave Local",
                     "protocol_version": "Versão do protocolo (experimente auto se não souber)",
-                    "poll_only": "Pesquisar (experimente isto se o seu dispositivo não funcionar totalmente)"
+                    "poll_only": "Pesquisar (experimente isto se o seu dispositivo não funcionar totalmente)",
+                "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -692,8 +694,6 @@
                 "state": {
                     "cancel": "Cancelar",
                     "continuous": "Contínuo",
-                    "5s": "5 segundos",
-                    "10s": "10 segundos",
                     "15s": "15 segundos",
                     "20s": "20 segundos",
                     "30s": "30 segundos",

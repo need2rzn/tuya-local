@@ -41,6 +41,7 @@
                     "local_key": "Локальний ключ (local_key)",
                     "protocol_version": "Версія протоколу (якщо не знаєте, спробуйте 'auto')",
                     "poll_only": "Виключно опитування (спробуйте це, якщо ваш пристрій не зовсім працює)",
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices",
                     "device_cid": "Sub device node_id або uuid (для пристроїв, підключених через шлюз)"
                 }
             },
@@ -95,7 +96,8 @@
                     "host": "IP-адреса або ім'я хоста",
                     "local_key": "Локальний ключ (local_key)",
                     "protocol_version": "Версія протоколу (якщо не знаєте, спробуйте 'auto')",
-                    "poll_only": "Виключно опитування (спробуйте це, якщо ваш пристрій не зовсім працює)"
+                    "poll_only": "Виключно опитування (спробуйте це, якщо ваш пристрій не зовсім працює)",
+                "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -692,8 +694,6 @@
                 "state": {
                     "cancel": "Скасувати",
                     "continuous": "Постійний",
-                    "5s": "5 секунд",
-                    "10s": "10 секунд",
                     "15s": "15 секунд",
                     "20s": "20 секунд",
                     "30s": "30 секунд",

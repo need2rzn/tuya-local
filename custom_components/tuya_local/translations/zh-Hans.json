@@ -41,6 +41,7 @@
                     "local_key": "Local key",
                     "protocol_version": "协议版本（如果不清楚，请选择自动）",
                     "poll_only": "仅轮询（如果设备无法正常工作，请选择此项）",
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices",
                     "device_cid": "子设备node_id或uuid（对于通过网关连接的设备）"
                 }
             },
@@ -95,7 +96,8 @@
                     "host": "IP地址或主机名",
                     "local_key": "Local key",
                     "protocol_version": "协议版本（如果不清楚，请选择自动）",
-                    "poll_only": "仅轮询（如果设备无法正常工作，请选择此项）"
+                    "poll_only": "仅轮询（如果设备无法正常工作，请选择此项）",
+                "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -692,8 +694,6 @@
                 "state": {
                     "cancel": "取消",
                     "continuous": "连续",
-                    "5s": "5秒",
-                    "10s": "10秒",
                     "15s": "15秒",
                     "20s": "20秒",
                     "30s": "30秒",
