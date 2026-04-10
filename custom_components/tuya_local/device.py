@@ -199,8 +199,7 @@ class TuyaLocalDevice(object):
             EVENT_HOMEASSISTANT_STOP, self.async_stop
         )
         if not self._refresh_task:
-            self._refresh_task = self._hass.async_create_task(
-                self.receive_loop())
+            self._refresh_task = self._hass.async_create_task(self.receive_loop())
 
     def start(self):
         if self._hass.is_stopping:
@@ -544,8 +543,7 @@ class TuyaLocalDevice(object):
         new_state = self._api.status()
         if new_state:
             if "Err" not in new_state:
-                self._cached_state = self._cached_state | new_state.get(
-                    "dps", {})
+                self._cached_state = self._cached_state | new_state.get("dps", {})
                 self._cached_state["updated_at"] = time()
                 for entity in self._children:
                     for dp in entity._config.dps():

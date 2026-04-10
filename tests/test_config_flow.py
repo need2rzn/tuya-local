@@ -33,16 +33,14 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 
 @pytest.fixture(autouse=True)
 def prevent_task_creation(mocker):
-    mocker.patch(
-        "custom_components.tuya_local.device.TuyaLocalDevice.register_entity")
+    mocker.patch("custom_components.tuya_local.device.TuyaLocalDevice.register_entity")
     yield
 
 
 @pytest.fixture
 def bypass_setup(mocker):
     """Prevent actual setup of the integration after config flow."""
-    mocker.patch("custom_components.tuya_local.async_setup_entry",
-                 return_value=True)
+    mocker.patch("custom_components.tuya_local.async_setup_entry", return_value=True)
     yield
 
 
@@ -85,8 +83,7 @@ async def test_migrate_entry(hass, mocker):
     mock_device.async_inferred_type = mocker.AsyncMock(
         return_value="goldair_gpph_heater"
     )
-    mocker.patch("custom_components.tuya_local.setup_device",
-                 return_value=mock_device)
+    mocker.patch("custom_components.tuya_local.setup_device", return_value=mock_device)
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -141,8 +138,7 @@ async def test_migrate_entry(hass, mocker):
     entry.add_to_hass(hass)
     assert not await async_migrate_entry(hass, entry)
 
-    mock_device.async_inferred_type = mocker.AsyncMock(
-        return_value="smartplugv1")
+    mock_device.async_inferred_type = mocker.AsyncMock(return_value="smartplugv1")
     mock_device.reset_mock()
 
     entry = MockConfigEntry(
@@ -162,8 +158,7 @@ async def test_migrate_entry(hass, mocker):
     entry.add_to_hass(hass)
     assert await async_migrate_entry(hass, entry)
 
-    mock_device.async_inferred_type = mocker.AsyncMock(
-        return_value="smartplugv2")
+    mock_device.async_inferred_type = mocker.AsyncMock(return_value="smartplugv2")
     mock_device.reset_mock()
 
     entry = MockConfigEntry(
@@ -505,8 +500,7 @@ async def test_flow_select_type_data_valid(hass, mocker):
 async def test_flow_choose_entities_init(hass, mocker):
     """Test the initialisation of the form in the 3rd step of the config flow."""
 
-    mocker.patch.dict(config_flow.ConfigFlowHandler.data,
-                      {CONF_TYPE: "smartplugv1"})
+    mocker.patch.dict(config_flow.ConfigFlowHandler.data, {CONF_TYPE: "smartplugv1"})
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": "choose_entities"}
     )

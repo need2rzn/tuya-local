@@ -93,8 +93,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                         return await self.async_step_choose_device()
                 except Exception as e:
                     # Re-authentication is needed.
-                    _LOGGER.warning(
-                        "Connection test failed with %s %s", type(e), e)
+                    _LOGGER.warning("Connection test failed with %s %s", type(e), e)
                     _LOGGER.warning("Re-authentication is required.")
                 return await self.async_step_cloud()
             if mode == "manual":
@@ -142,8 +141,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_USER_CODE, default=user_input.get(
-                            CONF_USER_CODE, "")
+                        CONF_USER_CODE, default=user_input.get(CONF_USER_CODE, "")
                     ): str,
                 }
             ),
@@ -263,8 +261,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="no_devices")
 
         device_selector = SelectSelector(
-            SelectSelectorConfig(options=device_list,
-                                 mode=SelectSelectorMode.DROPDOWN)
+            SelectSelectorConfig(options=device_list, mode=SelectSelectorMode.DROPDOWN)
         )
 
         hub_list = []
@@ -282,8 +279,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         _LOGGER.debug(f"Hub count: {len(hub_list) - 1}")
 
         hub_selector = SelectSelector(
-            SelectSelectorConfig(
-                options=hub_list, mode=SelectSelectorMode.DROPDOWN)
+            SelectSelectorConfig(options=hub_list, mode=SelectSelectorMode.DROPDOWN)
         )
 
         # Build form
@@ -366,11 +362,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             host_opts = {"default": self.__cloud_device.get("ip")}
             key_opts = {"default": self.__cloud_device.get(CONF_LOCAL_KEY)}
             if self.__cloud_device.get("version"):
-                proto_opts = {"default": str(
-                    self.__cloud_device.get("version"))}
+                proto_opts = {"default": str(self.__cloud_device.get("version"))}
             if self.__cloud_device.get(CONF_DEVICE_CID):
-                devcid_opts = {
-                    "default": self.__cloud_device.get(CONF_DEVICE_CID)}
+                devcid_opts = {"default": self.__cloud_device.get(CONF_DEVICE_CID)}
 
         if user_input is not None:
             proto = user_input.get(CONF_PROTOCOL_VERSION)
@@ -414,9 +408,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     devcid_opts["default"] = user_input[CONF_DEVICE_CID]
                 proto_opts["default"] = str(user_input[CONF_PROTOCOL_VERSION])
                 polling_opts["default"] = user_input[CONF_POLL_ONLY]
-                keep_state_opts["default"] = user_input.get(
-                    CONF_KEEP_LAST_STATE, False
-                )
+                keep_state_opts["default"] = user_input.get(CONF_KEEP_LAST_STATE, False)
 
         return self.async_show_form(
             step_id="local",
@@ -471,8 +463,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     label = f"{' '.join(parts)} ({dev_type.config_type})"
                 else:
                     label = f"{dev_type.name} ({dev_type.config_type})"
-                all_matches.append(
-                    (SelectOptionDict(value=key, label=label), q))
+                all_matches.append((SelectOptionDict(value=key, label=label), q))
                 if q > best_match:
                     best_match = q
                     best_matching_type = dev_type.config_type
@@ -635,8 +626,7 @@ class OptionsFlowHandler(OptionsFlow):
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(schema),
-            description_placeholders={
-                "device_details_url": DEVICE_DETAILS_URL},
+            description_placeholders={"device_details_url": DEVICE_DETAILS_URL},
             errors=errors,
         )
 
@@ -663,8 +653,7 @@ async def async_test_connection(config: dict, hass: HomeAssistant):
     domain_data = hass.data.get(DOMAIN)
     existing = domain_data.get(get_device_id(config)) if domain_data else None
     if existing and existing.get("device"):
-        _LOGGER.info(
-            "Pausing existing device to test new connection parameters")
+        _LOGGER.info("Pausing existing device to test new connection parameters")
         existing["device"].pause()
         await asyncio.sleep(5)
 
@@ -687,8 +676,7 @@ async def async_test_connection(config: dict, hass: HomeAssistant):
                     retval = device
                     break
             except Exception as e:
-                _LOGGER.debug(
-                    "Protocol %s test failed with %s %s", proto, type(e), e)
+                _LOGGER.debug("Protocol %s test failed with %s %s", proto, type(e), e)
             if device is not None:
                 device._api.set_socketPersistent(False)
                 if device._api.parent:

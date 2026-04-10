@@ -1,11 +1,12 @@
 name: Validate with HACS
 
-on:
+"on":
   push:
   pull_request:
 
 jobs:
   validate:
+    if: github.repository == 'make-all/tuya-local'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -18,4 +19,3 @@ jobs:
         with:
           category: integration
           ignore: wheels
-

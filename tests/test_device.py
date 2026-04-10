@@ -337,8 +337,7 @@ def test_get_key_for_value_returns_key_from_object_matching_value(subject):
 
 def test_get_key_for_value_returns_fallback_when_value_not_found(subject):
     obj = {"key1": "value1", "key2": "value2"}
-    assert TuyaLocalDevice.get_key_for_value(
-        obj, "value3", fallback="fb") == "fb"
+    assert TuyaLocalDevice.get_key_for_value(obj, "value3", fallback="fb") == "fb"
 
 
 def test_refresh_cached_state(subject, mock_api):
@@ -367,13 +366,11 @@ def test_set_values(subject, mock_api):
     subject._set_values({"1": "sample"})
 
     # did it send what it was asked?
-    mock_api().set_multiple_values.assert_called_once_with(
-        {"1": "sample"}, nowait=True)
+    mock_api().set_multiple_values.assert_called_once_with({"1": "sample"}, nowait=True)
     # did it mark the pending updates as sent?
     assert subject._pending_updates["1"]["sent"]
     # did it update the time on the pending updates?
-    assert subject._pending_updates["1"]["updated_at"] == pytest.approx(
-        time(), abs=2)
+    assert subject._pending_updates["1"]["updated_at"] == pytest.approx(time(), abs=2)
     # did it lock and unlock when sending
     # subject._lock.acquire.assert_called_once()
     # subject._lock.release.assert_called_once()
@@ -388,8 +385,7 @@ def test_pending_updates_cleared_on_receipt(subject):
         "3": {"value": True, "updated_at": now, "sent": True},  # unmatched
         "4": {"value": True, "updated_at": now, "sent": True},  # not received
     }
-    subject._remove_properties_from_pending_updates(
-        {"1": True, "2": True, "3": False})
+    subject._remove_properties_from_pending_updates({"1": True, "2": True, "3": False})
     assert subject._pending_updates == {
         "2": {"value": True, "updated_at": now, "sent": False},
         "3": {"value": True, "updated_at": now, "sent": True},
