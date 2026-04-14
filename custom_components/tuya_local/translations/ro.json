@@ -41,6 +41,7 @@
                     "local_key": "Cheie locală",
                     "protocol_version": "Versiunea protocolului (încercați auto dacă nu este cunoscută)",
                     "poll_only": "Doar interogare (încercați dacă dispozitivul nu funcționează complet)",
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices",
                     "device_cid": "Sub-device node_id sau uuid (pentru dispozitive conectate prin gateway)"
                 }
             },
@@ -95,7 +96,8 @@
                     "host": "Adresă IP sau hostname",
                     "local_key": "Cheie locală",
                     "protocol_version": "Versiunea protocolului (încercați auto dacă nu este cunoscută)",
-                    "poll_only": "Doar interogare (încercați dacă dispozitivul nu funcționează complet)"
+                    "poll_only": "Doar interogare (încercați dacă dispozitivul nu funcționează complet)",
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -692,8 +694,6 @@
                 "state": {
                     "cancel": "Anulează",
                     "continuous": "Continuu",
-                    "5s": "5 secunde",
-                    "10s": "10 secunde",
                     "15s": "15 secunde",
                     "20s": "20 secunde",
                     "30s": "30 secunde",

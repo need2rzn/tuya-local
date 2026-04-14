@@ -41,6 +41,7 @@
                     "local_key": "Kunci lokal (local_key)",
                     "protocol_version": "Versi protokol (coba otomatis bila tidak diketahui)",
                     "poll_only": "Hanya poll (Coba ini bila perangkat Anda tidak berfungsi secara penuh)",
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices",
                     "device_cid": "node_id atau uuid sub perangkat (untuk perangkat yang tersambung via gateway)"
                 }
             },
@@ -95,7 +96,8 @@
                     "host": "Alamat IP atau nama hos",
                     "local_key": "Kunci lokal (local_key)",
                     "protocol_version": "Versi protokol (coba otomatis bila tidak diketahui)",
-                    "poll_only": "Hanya poll (Coba ini bila perangkat Anda tidak berfungsi secara penuh)"
+                    "poll_only": "Hanya poll (Coba ini bila perangkat Anda tidak berfungsi secara penuh)",
+                "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -692,8 +694,6 @@
                 "state": {
                     "cancel": "Batal",
                     "continuous": "Terus menerus",
-                    "5s": "5 detik",
-                    "10s": "10 detik",
                     "15s": "15 detik",
                     "20s": "20 detik",
                     "30s": "30 detik",

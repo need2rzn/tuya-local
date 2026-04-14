@@ -14,6 +14,7 @@ from custom_components.tuya_local import (
 from custom_components.tuya_local.const import (
     CONF_DEVICE_CID,
     CONF_DEVICE_ID,
+    CONF_KEEP_LAST_STATE,
     CONF_LOCAL_KEY,
     CONF_POLL_ONLY,
     CONF_PROTOCOL_VERSION,
@@ -32,14 +33,16 @@ def auto_enable_custom_integrations(enable_custom_integrations):
 
 @pytest.fixture(autouse=True)
 def prevent_task_creation(mocker):
-    mocker.patch("custom_components.tuya_local.device.TuyaLocalDevice.register_entity")
+    mocker.patch(
+        "custom_components.tuya_local.device.TuyaLocalDevice.register_entity")
     yield
 
 
 @pytest.fixture
 def bypass_setup(mocker):
     """Prevent actual setup of the integration after config flow."""
-    mocker.patch("custom_components.tuya_local.async_setup_entry", return_value=True)
+    mocker.patch("custom_components.tuya_local.async_setup_entry",
+                 return_value=True)
     yield
 
 
@@ -82,7 +85,8 @@ async def test_migrate_entry(hass, mocker):
     mock_device.async_inferred_type = mocker.AsyncMock(
         return_value="goldair_gpph_heater"
     )
-    mocker.patch("custom_components.tuya_local.setup_device", return_value=mock_device)
+    mocker.patch("custom_components.tuya_local.setup_device",
+                 return_value=mock_device)
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -137,7 +141,8 @@ async def test_migrate_entry(hass, mocker):
     entry.add_to_hass(hass)
     assert not await async_migrate_entry(hass, entry)
 
-    mock_device.async_inferred_type = mocker.AsyncMock(return_value="smartplugv1")
+    mock_device.async_inferred_type = mocker.AsyncMock(
+        return_value="smartplugv1")
     mock_device.reset_mock()
 
     entry = MockConfigEntry(
@@ -157,7 +162,8 @@ async def test_migrate_entry(hass, mocker):
     entry.add_to_hass(hass)
     assert await async_migrate_entry(hass, entry)
 
-    mock_device.async_inferred_type = mocker.AsyncMock(return_value="smartplugv2")
+    mock_device.async_inferred_type = mocker.AsyncMock(
+        return_value="smartplugv2")
     mock_device.reset_mock()
 
     entry = MockConfigEntry(
@@ -499,7 +505,8 @@ async def test_flow_select_type_data_valid(hass, mocker):
 async def test_flow_choose_entities_init(hass, mocker):
     """Test the initialisation of the form in the 3rd step of the config flow."""
 
-    mocker.patch.dict(config_flow.ConfigFlowHandler.data, {CONF_TYPE: "smartplugv1"})
+    mocker.patch.dict(config_flow.ConfigFlowHandler.data,
+                      {CONF_TYPE: "smartplugv1"})
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": "choose_entities"}
     )
@@ -539,6 +546,7 @@ async def test_flow_choose_entities_creates_config_entry(hass, bypass_setup, moc
             CONF_DEVICE_ID: "deviceid",
             CONF_LOCAL_KEY: TESTKEY,
             CONF_HOST: "hostname",
+            CONF_KEEP_LAST_STATE: False,
             CONF_POLL_ONLY: False,
             CONF_PROTOCOL_VERSION: "auto",
             CONF_TYPE: "kogan_kahtp_heater",
@@ -554,30 +562,26 @@ async def test_flow_choose_entities_creates_config_entry(hass, bypass_setup, moc
             CONF_NAME: "test",
         },
     )
-    expected = {
-        "version": 13,
-        "minor_version": mocker.ANY,
-        "context": {"source": "choose_entities"},
-        "type": FlowResultType.CREATE_ENTRY,
-        "flow_id": mocker.ANY,
-        "handler": DOMAIN,
-        "title": "test",
-        "description": None,
-        "description_placeholders": None,
-        "result": mocker.ANY,
-        "subentries": (),
-        "options": {},
-        "data": {
-            CONF_DEVICE_ID: "deviceid",
-            CONF_HOST: "hostname",
-            CONF_LOCAL_KEY: TESTKEY,
-            CONF_POLL_ONLY: False,
-            CONF_PROTOCOL_VERSION: "auto",
-            CONF_TYPE: "kogan_kahtp_heater",
-            CONF_DEVICE_CID: None,
-        },
+    assert result["version"] == 13
+    assert "minor_version" in result
+    assert result["context"] == {"source": "choose_entities"}
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["handler"] == DOMAIN
+    assert result["title"] == "test"
+    assert result["description"] is None
+    assert result["description_placeholders"] is None
+    assert result["options"] == {}
+    assert result.get("subentries", ()) == ()
+    assert result["data"] == {
+        CONF_DEVICE_ID: "deviceid",
+        CONF_HOST: "hostname",
+        CONF_KEEP_LAST_STATE: False,
+        CONF_LOCAL_KEY: TESTKEY,
+        CONF_POLL_ONLY: False,
+        CONF_PROTOCOL_VERSION: "auto",
+        CONF_TYPE: "kogan_kahtp_heater",
+        CONF_DEVICE_CID: None,
     }
-    assert expected == result
 
 
 @pytest.mark.asyncio
@@ -657,6 +661,7 @@ async def test_options_flow_modifies_config(hass, bypass_setup, mocker):
     )
     expected = {
         CONF_HOST: "new_hostname",
+        CONF_KEEP_LAST_STATE: False,
         CONF_LOCAL_KEY: "new_key",
         CONF_POLL_ONLY: False,
         CONF_PROTOCOL_VERSION: 3.3,

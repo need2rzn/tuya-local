@@ -41,6 +41,7 @@
                     "local_key": "Helyi kulcs (local_key)",
                     "protocol_version": "Protokol verzió (hagyd auto-n, ha nem tudod)",
                     "poll_only": "Csak olvasás (próbáld ki ezt, ha az eszköz nem működik rendesen)",
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices",
                     "device_cid": "Aleszköz node_id vagy uuid (átjárón keresztül használt eszközök esetén)"
                 }
             },
@@ -95,7 +96,8 @@
                     "host": "IP cím vagy állomásnév",
                     "local_key": "Helyi kulcs (local_key)",
                     "protocol_version": "Protokol verzió (hagyd auto-n, ha nem tudod)",
-                    "poll_only": "Csak olvasás (próbáld ki ezt, ha az eszköz nem működik rendesen)"
+                    "poll_only": "Csak olvasás (próbáld ki ezt, ha az eszköz nem működik rendesen)",
+                "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -692,8 +694,6 @@
                 "state": {
                     "cancel": "Mégse",
                     "continuous": "Folyamatos",
-                    "5s": "5 másodperc",
-                    "10s": "10 másodperc",
                     "15s": "15 másodperc",
                     "20s": "20 másodperc",
                     "30s": "30 másodperc",

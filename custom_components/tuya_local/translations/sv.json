@@ -41,6 +41,7 @@
                     "local_key": "Lokal nyckel",
                     "protocol_version": "Protokoll version (prova auto om okänd)",
                     "poll_only": "Endast polling (prova detta om din enhet inte fungerar helt)",
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices",
                     "device_cid": "Sub-enhet node_id eller uuid (för enheter anslutna via gateway)"
                 }
             },
@@ -95,7 +96,8 @@
                     "host": "IP-adress eller värdnamn",
                     "local_key": "Lokal nyckel",
                     "protocol_version": "Protokollversion (prova auto om okänd)",
-                    "poll_only": "Endast polling (prova detta om din enhet inte fungerar helt)"
+                    "poll_only": "Endast polling (prova detta om din enhet inte fungerar helt)",
+                "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -692,8 +694,6 @@
                 "state": {
                     "cancel": "Avbryt",
                     "continuous": "Kontinuerlig",
-                    "5s": "5 sekunder",
-                    "10s": "10 sekunder",
                     "15s": "15 sekunder",
                     "20s": "20 sekunder",
                     "30s": "30 sekunder",

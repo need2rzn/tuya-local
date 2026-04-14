@@ -41,6 +41,7 @@
                     "local_key": "Lokaler Schlüssel",
                     "protocol_version": "Protokollversion (versuchen Sie auto, falls nicht bekannt)",
                     "poll_only": "Nur Abfrage (versuchen Sie dies, wenn Ihr Gerät nicht vollständig funktioniert)",
+                    "keep_last_state": "Letzten bekannten Zustand für Schlaf-/Low-Power-Geräte beibehalten",
                     "device_cid": "Sub Geräte node_id oder uuid (für Geräte, die über ein Gateway angeschlossen sind)"
                 }
             },
@@ -95,7 +96,8 @@
                     "host": "IP-Adresse oder Host-Name",
                     "local_key": "Lokaler Schlüssel",
                     "protocol_version": "Protokollversion (versuchen Sie auto, falls nicht bekannt)",
-                    "poll_only": "Nur Abfrage (versuchen Sie dies, wenn Ihr Gerät nicht vollständig funktioniert)"
+                    "poll_only": "Nur Abfrage (versuchen Sie dies, wenn Ihr Gerät nicht vollständig funktioniert)",
+                    "keep_last_state": "Letzten bekannten Zustand für Schlaf-/Low-Power-Geräte beibehalten"
                 }
             }
         },
@@ -692,8 +694,6 @@
                 "state": {
                     "cancel": "Abbrechen",
                     "continuous": "Dauerbetrieb",
-                    "5s": "5 Sekunden",
-                    "10s": "10 Sekunden",
                     "15s": "15 Sekunden",
                     "20s": "20 Sekunden",
                     "30s": "30 Sekunden",
