@@ -97,7 +97,7 @@
                     "local_key": "ローカルキー",
                     "protocol_version": "プロトコルのバージョン (不明な場合はAutoを試してください)",
                     "poll_only": "投票のみ (デバイスが動作しない場合)",
-                "keep_last_state": "Keep last known state for sleeping/low-power devices"
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -694,6 +694,8 @@
                 "state": {
                     "cancel": "キャンセル",
                     "continuous": "連続",
+                    "5s": "5秒",
+                    "10s": "10秒",
                     "15s": "15秒",
                     "20s": "20秒",
                     "30s": "30秒",

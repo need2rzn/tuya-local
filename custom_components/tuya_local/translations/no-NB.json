@@ -97,7 +97,7 @@
                     "local_key": "Lokal nøkkel",
                     "protocol_version": "Protocol versjon (prøv auto hvis du der usikker)",
                     "poll_only": "Kun poll (prøv dette hvis enhenten ikke virker ordentlig)",
-                "keep_last_state": "Keep last known state for sleeping/low-power devices"
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -694,6 +694,8 @@
                 "state": {
                     "cancel": "Avbryt",
                     "continuous": "Kontinuerlig",
+                    "5s": "5 sekunder",
+                    "10s": "10 sekunder",
                     "15s": "15 sekunder",
                     "20s": "20 sekunder",
                     "30s": "30 sekunder",

@@ -97,7 +97,7 @@
                     "local_key": "Clave local (Local key)",
                     "protocol_version": "Versión del protocolo (pruebe automático si no lo sabe)",
                     "poll_only": "Solo encuesta (pruebe esto si su dispositivo no funciona completamente)",
-                "keep_last_state": "Keep last known state for sleeping/low-power devices"
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -694,6 +694,8 @@
                 "state": {
                     "cancel": "Cancelar",
                     "continuous": "Continuo",
+                    "5s": "5 segundos",
+                    "10s": "10 segundos",
                     "15s": "15 segundos",
                     "20s": "20 segundos",
                     "30s": "30 segundos",

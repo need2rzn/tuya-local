@@ -96,7 +96,7 @@
                     "local_key": "Clau local",
                     "protocol_version": "Versió del protocol (intenteu-ho automàticament si no es coneix)",
                     "poll_only": "Només enquestes (proveu això si el vostre dispositiu no funciona completament)",
-                "keep_last_state": "Keep last known state for sleeping/low-power devices"
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 },
                 "description": "[Seguiu aquestes instruccions per a trobar la vostra clau local.]({device_details_url})"
             }
@@ -694,6 +694,8 @@
                 "state": {
                     "cancel": "Cancel·la",
                     "continuous": "Continu",
+                    "5s": "5 segons",
+                    "10s": "10 segons",
                     "15s": "15 segons",
                     "20s": "20 segons",
                     "30s": "30 segons",

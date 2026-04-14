@@ -97,7 +97,7 @@
                     "local_key": "lokální klíč (local_key)",
                     "protocol_version": "Verze protokolu (zkuste auto pokud ji neznáte)",
                     "poll_only": "Poll only (vyzkoušejte pokud zařízení úplně nefunguje)",
-                "keep_last_state": "Keep last known state for sleeping/low-power devices"
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -694,6 +694,8 @@
                 "state": {
                     "cancel": "Zrušit",
                     "continuous": "Nepřetržitý",
+                    "5s": "5 sekund",
+                    "10s": "10 sekund",
                     "15s": "15 sekund",
                     "20s": "20 sekund",
                     "30s": "30 sekund",

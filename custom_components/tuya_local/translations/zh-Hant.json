@@ -97,7 +97,7 @@
                     "local_key": "Local key",
                     "protocol_version": "協議版本（如果不清楚，請選擇自動）",
                     "poll_only": "僅輪詢（如果設備無法正常運作，請選擇此項）",
-                "keep_last_state": "Keep last known state for sleeping/low-power devices"
+                    "keep_last_state": "Keep last known state for sleeping/low-power devices"
                 }
             }
         },
@@ -694,6 +694,8 @@
                 "state": {
                     "cancel": "取消",
                     "continuous": "連續",
+                    "5s": "5秒",
+                    "10s": "10秒",
                     "15s": "15秒",
                     "20s": "20秒",
                     "30s": "30秒",
