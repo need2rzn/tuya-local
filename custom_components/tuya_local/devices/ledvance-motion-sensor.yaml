@@ -1,0 +1,29 @@
+name: Motion Sensor
+products:
+  - id: key3a8nx4tpkcugh
+    manufacturer: Ledvance
+    model: Ledvance Smart+ Motion Sensor
+
+entities:
+  - entity: binary_sensor
+    class: motion
+    dps:
+      - id: 1
+        name: sensor
+        type: string
+        mapping:
+          - dps_val: none
+            value: false
+          - dps_val: pir
+            value: true
+
+  - entity: sensor
+    class: battery
+    category: diagnostic
+    dps:
+      - id: 4
+        type: integer
+        name: sensor
+        unit: "%"
+        class: measurement
+        optional: true
