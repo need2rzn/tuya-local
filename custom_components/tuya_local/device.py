@@ -200,12 +200,19 @@ class TuyaLocalDevice(object):
 
     @callback
     def actually_start(self, event=None):
-        _LOGGER.debug("Starting monitor loop for %s", self.name)
+        _LOGGER.debug(
+            "Starting monitor loop for %s running=%s should_poll=%s has_state=%s",
+            self.name,
+            self._running,
+            self.should_poll,
+            self.has_returned_state,
+        )
         self._running = True
         self._shutdown_listener = self._hass.bus.async_listen_once(
             EVENT_HOMEASSISTANT_STOP, self.async_stop
         )
         if not self._refresh_task:
+            _LOGGER.debug("%s creating receive_loop task", self.name)
             self._refresh_task = self._hass.async_create_task(self.receive_loop())
 
     def start(self):
@@ -262,6 +269,7 @@ class TuyaLocalDevice(object):
 
     async def receive_loop(self):
         """Coroutine wrapper for async_receive generator."""
+        _LOGGER.debug("%s receive_loop entered", self.name)
         try:
             async for poll in self.async_receive():
                 if isinstance(poll, dict):
@@ -345,6 +353,8 @@ class TuyaLocalDevice(object):
             self._api.set_socketPersistent(False)
             if self._api.parent:
                 self._api.parent.set_socketPersistent(False)
+        finally:
+            _LOGGER.debug("%s receive_loop exiting", self.name)
 
     @property
     def should_poll(self):
@@ -385,11 +395,20 @@ class TuyaLocalDevice(object):
             self._api.parent.set_socketPersistent(persist)
 
         last_heartbeat = self._cached_state.get("updated_at", 0)
+        _LOGGER.debug(
+            "%s async_receive entered persist=%s should_poll=%s has_state=%s",
+            self.name,
+            persist,
+            self.should_poll,
+            self.has_returned_state,
+        )
         while self._running:
             error_count = self._api_working_protocol_failures
             backoff_delay = 0.1
             try:
+                _LOGGER.debug("%s async_receive waiting_for_lock", self.name)
                 await self._api_lock.acquire()
+                _LOGGER.debug("%s async_receive lock_acquired", self.name)
                 last_cache = self._cached_state.get("updated_at", 0)
                 now = time()
                 full_poll = False
@@ -411,12 +430,27 @@ class TuyaLocalDevice(object):
                         max(self._next_sleeping_retry - now, 1),
                         self._SLEEPING_RETRY_INTERVAL,
                     )
+                    _LOGGER.debug(
+                        "%s async_receive sleeping_backoff delay=%.2fs next_retry=%.2f now=%.2f",
+                        self.name,
+                        backoff_delay,
+                        self._next_sleeping_retry,
+                        now,
+                    )
                     continue
 
                 needs_full_poll = now - self._last_full_poll > self._CACHE_TIMEOUT
                 if now - last_cache > self._CACHE_TIMEOUT or (
                     persist and needs_full_poll
                 ):
+                    _LOGGER.debug(
+                        "%s async_receive performing_full_poll persist=%s last_cache_age=%.2fs needs_full_poll=%s dps_updated=%s",
+                        self.name,
+                        persist,
+                        now - last_cache,
+                        needs_full_poll,
+                        dps_updated,
+                    )
                     if (
                         self._force_dps
                         and not dps_updated
@@ -440,13 +474,20 @@ class TuyaLocalDevice(object):
                         backoff_delay = 5
                 elif persist:
                     if now - last_heartbeat > self._HEARTBEAT_INTERVAL:
+                        _LOGGER.debug("%s async_receive sending_heartbeat", self.name)
                         await self._hass.async_add_executor_job(
                             self._api.heartbeat,
                             True,
                         )
                         last_heartbeat = now
+                    _LOGGER.debug("%s async_receive waiting_for_push_message", self.name)
                     poll = await self._hass.async_add_executor_job(
                         self._api.receive,
+                    )
+                    _LOGGER.debug(
+                        "%s async_receive receive_returned type=%s",
+                        self.name,
+                        type(poll).__name__,
                     )
                     # Ignore Payload error 904, as 3.4 protocol devices seem to return
                     # this when there is no new data, instead of just returning nothing.
@@ -454,6 +495,11 @@ class TuyaLocalDevice(object):
                         poll = None
                 else:
                     backoff_delay = 5
+                    _LOGGER.debug(
+                        "%s async_receive non_persistent_idle delay=%.2fs",
+                        self.name,
+                        backoff_delay,
+                    )
                     poll = None
 
                 if poll:
@@ -479,6 +525,12 @@ class TuyaLocalDevice(object):
                         if "dps" in poll:
                             poll = poll["dps"]
                         poll["full_poll"] = full_poll
+                        _LOGGER.debug(
+                            "%s async_receive yielding keys=%s full_poll=%s",
+                            self.name,
+                            sorted(str(key) for key in poll.keys()),
+                            full_poll,
+                        )
                         yield poll
 
             except CancelledError:
@@ -502,14 +554,23 @@ class TuyaLocalDevice(object):
             finally:
                 if self._api_lock.locked():
                     self._api_lock.release()
+                    _LOGGER.debug("%s async_receive lock_released", self.name)
             if not self.has_returned_state:
                 backoff_delay = max(backoff_delay, 5)
+            _LOGGER.debug(
+                "%s async_receive sleeping delay=%.2fs running=%s has_state=%s",
+                self.name,
+                backoff_delay,
+                self._running,
+                self.has_returned_state,
+            )
             await asyncio.sleep(backoff_delay)
 
         # Close the persistent connection when exiting the loop
         self._api.set_socketPersistent(False)
         if self._api.parent:
             self._api.parent.set_socketPersistent(False)
+        _LOGGER.debug("%s async_receive exited", self.name)
 
     def set_detected_product_id(self, product_id):
         self._product_ids.append(product_id)
