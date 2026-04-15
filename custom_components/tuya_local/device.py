@@ -437,70 +437,72 @@ class TuyaLocalDevice(object):
                         self._next_sleeping_retry,
                         now,
                     )
-                    continue
-
-                needs_full_poll = now - self._last_full_poll > self._CACHE_TIMEOUT
-                if now - last_cache > self._CACHE_TIMEOUT or (
-                    persist and needs_full_poll
-                ):
-                    _LOGGER.debug(
-                        "%s async_receive performing_full_poll persist=%s last_cache_age=%.2fs needs_full_poll=%s dps_updated=%s",
-                        self.name,
-                        persist,
-                        now - last_cache,
-                        needs_full_poll,
-                        dps_updated,
-                    )
-                    if (
-                        self._force_dps
-                        and not dps_updated
-                        and self._api_protocol_working
-                    ):
-                        poll = await self._retry_on_failed_connection(
-                            lambda: self._api.updatedps(self._force_dps),
-                            f"Failed to update device dps for {self.name}",
-                        )
-                        dps_updated = True
-                    else:
-                        poll = await self._retry_on_failed_connection(
-                            lambda: self._api.status(),
-                            f"Failed to fetch device status for {self.name}",
-                        )
-                        dps_updated = False
-                        full_poll = True
-                    self._last_full_poll = now
-                    last_heartbeat = now  # reset heartbeat timer on full poll
-                    if poll is None and self._last_connection_failed:
-                        backoff_delay = 5
-                elif persist:
-                    if now - last_heartbeat > self._HEARTBEAT_INTERVAL:
-                        _LOGGER.debug("%s async_receive sending_heartbeat", self.name)
-                        await self._hass.async_add_executor_job(
-                            self._api.heartbeat,
-                            True,
-                        )
-                        last_heartbeat = now
-                    _LOGGER.debug("%s async_receive waiting_for_push_message", self.name)
-                    poll = await self._hass.async_add_executor_job(
-                        self._api.receive,
-                    )
-                    _LOGGER.debug(
-                        "%s async_receive receive_returned type=%s",
-                        self.name,
-                        type(poll).__name__,
-                    )
-                    # Ignore Payload error 904, as 3.4 protocol devices seem to return
-                    # this when there is no new data, instead of just returning nothing.
-                    if poll and "Err" in poll and poll["Err"] == "904":
-                        poll = None
-                else:
-                    backoff_delay = 5
-                    _LOGGER.debug(
-                        "%s async_receive non_persistent_idle delay=%.2fs",
-                        self.name,
-                        backoff_delay,
-                    )
                     poll = None
+                    dps_updated = False
+                    last_heartbeat = now
+                else:
+                    needs_full_poll = now - self._last_full_poll > self._CACHE_TIMEOUT
+                    if now - last_cache > self._CACHE_TIMEOUT or (
+                        persist and needs_full_poll
+                    ):
+                        _LOGGER.debug(
+                            "%s async_receive performing_full_poll persist=%s last_cache_age=%.2fs needs_full_poll=%s dps_updated=%s",
+                            self.name,
+                            persist,
+                            now - last_cache,
+                            needs_full_poll,
+                            dps_updated,
+                        )
+                        if (
+                            self._force_dps
+                            and not dps_updated
+                            and self._api_protocol_working
+                        ):
+                            poll = await self._retry_on_failed_connection(
+                                lambda: self._api.updatedps(self._force_dps),
+                                f"Failed to update device dps for {self.name}",
+                            )
+                            dps_updated = True
+                        else:
+                            poll = await self._retry_on_failed_connection(
+                                lambda: self._api.status(),
+                                f"Failed to fetch device status for {self.name}",
+                            )
+                            dps_updated = False
+                            full_poll = True
+                        self._last_full_poll = now
+                        last_heartbeat = now  # reset heartbeat timer on full poll
+                        if poll is None and self._last_connection_failed:
+                            backoff_delay = 5
+                    elif persist:
+                        if now - last_heartbeat > self._HEARTBEAT_INTERVAL:
+                            _LOGGER.debug("%s async_receive sending_heartbeat", self.name)
+                            await self._hass.async_add_executor_job(
+                                self._api.heartbeat,
+                                True,
+                            )
+                            last_heartbeat = now
+                        _LOGGER.debug("%s async_receive waiting_for_push_message", self.name)
+                        poll = await self._hass.async_add_executor_job(
+                            self._api.receive,
+                        )
+                        _LOGGER.debug(
+                            "%s async_receive receive_returned type=%s",
+                            self.name,
+                            type(poll).__name__,
+                        )
+                        # Ignore Payload error 904, as 3.4 protocol devices seem to return
+                        # this when there is no new data, instead of just returning nothing.
+                        if poll and "Err" in poll and poll["Err"] == "904":
+                            poll = None
+                    else:
+                        backoff_delay = 5
+                        _LOGGER.debug(
+                            "%s async_receive non_persistent_idle delay=%.2fs",
+                            self.name,
+                            backoff_delay,
+                        )
+                        poll = None
 
                 if poll:
                     if "Error" in poll:
