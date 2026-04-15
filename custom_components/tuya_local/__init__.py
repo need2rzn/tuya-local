@@ -22,6 +22,7 @@ from homeassistant.util import slugify
 from .const import (
     CONF_DEVICE_CID,
     CONF_DEVICE_ID,
+    CONF_KEEP_LAST_STATE,
     CONF_LOCAL_KEY,
     CONF_POLL_ONLY,
     CONF_PROTOCOL_VERSION,
