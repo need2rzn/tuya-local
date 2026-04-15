@@ -695,6 +695,9 @@ async def test_options_flow_modifies_config(hass, bypass_setup, mocker):
             CONF_LOCAL_KEY: "new_key",
             CONF_POLL_ONLY: False,
             CONF_PROTOCOL_VERSION: "3.3",
+            CONF_KEEP_LAST_STATE: False,
+            CONF_SLEEPING_POLL_INTERVAL: 300,
+            CONF_SKIP_LIVE_CONNECTION_TEST: False,
         },
     )
     expected = {
@@ -703,6 +706,8 @@ async def test_options_flow_modifies_config(hass, bypass_setup, mocker):
         CONF_LOCAL_KEY: "new_key",
         CONF_POLL_ONLY: False,
         CONF_PROTOCOL_VERSION: 3.3,
+        CONF_SLEEPING_POLL_INTERVAL: 300,
+        CONF_SKIP_LIVE_CONNECTION_TEST: False,
     }
     assert "create_entry" == result["type"]
     assert "" == result["title"]
@@ -744,11 +749,70 @@ async def test_options_flow_fails_when_connection_fails(
         user_input={
             CONF_HOST: "new_hostname",
             CONF_LOCAL_KEY: "new_key",
+            CONF_POLL_ONLY: False,
+            CONF_PROTOCOL_VERSION: "auto",
+            CONF_KEEP_LAST_STATE: False,
+            CONF_SLEEPING_POLL_INTERVAL: 300,
+            CONF_SKIP_LIVE_CONNECTION_TEST: False,
         },
     )
     assert "form" == result["type"]
     assert "user" == result["step_id"]
     assert {"base": "connection"} == result["errors"]
+
+
+@pytest.mark.asyncio
+async def test_options_flow_can_skip_live_connection_test(
+    hass, bypass_data_fetch, mocker
+):
+    mocker.patch(
+        "custom_components.tuya_local.config_flow.async_test_connection",
+        return_value=None,
+    )
+    config_entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=13,
+        unique_id="uniqueid",
+        data={
+            CONF_DEVICE_ID: "deviceid",
+            CONF_HOST: "hostname",
+            CONF_LOCAL_KEY: TESTKEY,
+            CONF_NAME: "test",
+            CONF_POLL_ONLY: False,
+            CONF_PROTOCOL_VERSION: "auto",
+            CONF_TYPE: "smartplugv1",
+            CONF_DEVICE_CID: "",
+        },
+    )
+    config_entry.add_to_hass(hass)
+
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    form = await hass.config_entries.options.async_init(config_entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        form["flow_id"],
+        user_input={
+            CONF_HOST: "new_hostname",
+            CONF_LOCAL_KEY: "new_key",
+            CONF_POLL_ONLY: False,
+            CONF_PROTOCOL_VERSION: "auto",
+            CONF_KEEP_LAST_STATE: True,
+            CONF_SLEEPING_POLL_INTERVAL: 600,
+            CONF_SKIP_LIVE_CONNECTION_TEST: True,
+        },
+    )
+    expected = {
+        CONF_HOST: "new_hostname",
+        CONF_LOCAL_KEY: "new_key",
+        CONF_POLL_ONLY: False,
+        CONF_PROTOCOL_VERSION: "auto",
+        CONF_KEEP_LAST_STATE: True,
+        CONF_SLEEPING_POLL_INTERVAL: 600,
+        CONF_SKIP_LIVE_CONNECTION_TEST: True,
+    }
+    assert "create_entry" == result["type"]
+    assert "" == result["title"]
+    assert expected == result["data"]
 
 
 @pytest.mark.asyncio
