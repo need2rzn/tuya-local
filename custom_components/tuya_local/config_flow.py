@@ -37,13 +37,14 @@ from .const import (
     CONF_POLL_ONLY,
     CONF_PROTOCOL_VERSION,
     CONF_SLEEPING_POLL_INTERVAL,
+    CONF_SKIP_LIVE_CONNECTION_TEST,
     CONF_TYPE,
     CONF_USER_CODE,
     DATA_STORE,
 )
 from .device import TuyaLocalDevice
 from .helpers.config import get_device_id
-from .helpers.device_config import get_config
+from .helpers.device_config import TuyaDeviceConfig, available_configs, get_config
 from .helpers.log import log_json
 
 _LOGGER = logging.getLogger(__name__)
@@ -68,6 +69,27 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         """Initialize the config flow."""
         self.cloud = None
+
+    def _all_config_type_options(self):
+        """Return all known device types for manual selection."""
+        options = []
+        seen = set()
+
+        for cfg in available_configs():
+            dev_type = TuyaDeviceConfig(cfg)
+            for manufacturer, model in dev_type.product_display_entries():
+                key = f"{dev_type.config_type}||{manufacturer or ''}||{model or ''}"
+                if key in seen:
+                    continue
+                seen.add(key)
+                parts = [p for p in [manufacturer, model] if p]
+                if parts:
+                    label = f"{' '.join(parts)} ({dev_type.config_type})"
+                else:
+                    label = f"{dev_type.name} ({dev_type.config_type})"
+                options.append(SelectOptionDict(value=key, label=label))
+
+        return sorted(options, key=lambda option: option["label"].lower())
 
     def init_cloud(self):
         if self.cloud is None:
@@ -361,6 +383,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         polling_opts = {"default": False}
         keep_state_opts = {"default": False}
         sleeping_poll_opts = {"default": 300}
+        skip_test_opts = {"default": False}
         devcid_opts = {}
 
         if self.__cloud_device is not None:
@@ -409,6 +432,14 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                 self._abort_if_unique_id_configured()
                 return await self.async_step_select_type()
             else:
+                if user_input.get(CONF_SKIP_LIVE_CONNECTION_TEST, False):
+                    self.device = None
+                    self.data = user_input
+                    await self.async_set_unique_id(
+                        user_input.get(CONF_DEVICE_CID, user_input[CONF_DEVICE_ID])
+                    )
+                    self._abort_if_unique_id_configured()
+                    return await self.async_step_select_type()
                 errors["base"] = "connection"
                 devid_opts["default"] = user_input[CONF_DEVICE_ID]
                 host_opts["default"] = user_input[CONF_HOST]
@@ -422,6 +453,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                 )
                 sleeping_poll_opts["default"] = user_input.get(
                     CONF_SLEEPING_POLL_INTERVAL, 300
+                )
+                skip_test_opts["default"] = user_input.get(
+                    CONF_SKIP_LIVE_CONNECTION_TEST, False
                 )
 
         return self.async_show_form(
@@ -440,6 +474,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     vol.Required(
                         CONF_SLEEPING_POLL_INTERVAL, **sleeping_poll_opts
                     ): SLEEPING_POLL_INTERVAL_SCHEMA,
+                    vol.Required(
+                        CONF_SKIP_LIVE_CONNECTION_TEST, **skip_test_opts
+                    ): bool,
                     vol.Optional(CONF_DEVICE_CID, **devcid_opts): str,
                 }
             ),
@@ -460,6 +497,25 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
             if len(parts) > 2 and parts[2]:
                 self.data[CONF_MODEL] = parts[2]
             return await self.async_step_choose_entities()
+
+        if self.device is None:
+            type_options = self._all_config_type_options()
+            if not type_options:
+                return self.async_abort(reason="not_supported")
+            return self.async_show_form(
+                step_id="select_type",
+                data_schema=vol.Schema(
+                    {
+                        vol.Required(
+                            CONF_TYPE,
+                            default=type_options[0]["value"],
+                        ): SelectSelector(SelectSelectorConfig(options=type_options)),
+                    }
+                ),
+                description_placeholders={
+                    "device_name": self._device_name_placeholder,
+                },
+            )
 
         all_matches = []
         best_match = 0

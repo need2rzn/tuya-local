@@ -18,6 +18,8 @@ from custom_components.tuya_local.const import (
     CONF_LOCAL_KEY,
     CONF_POLL_ONLY,
     CONF_PROTOCOL_VERSION,
+    CONF_SKIP_LIVE_CONNECTION_TEST,
+    CONF_SLEEPING_POLL_INTERVAL,
     CONF_TYPE,
     DOMAIN,
 )
@@ -392,6 +394,9 @@ async def test_flow_user_init_invalid_config(hass, mocker):
             CONF_LOCAL_KEY: "badkey",
             CONF_PROTOCOL_VERSION: "auto",
             CONF_POLL_ONLY: False,
+            CONF_KEEP_LAST_STATE: False,
+            CONF_SLEEPING_POLL_INTERVAL: 300,
+            CONF_SKIP_LIVE_CONNECTION_TEST: False,
         },
     )
     assert {"base": "connection"} == result["errors"]
@@ -428,6 +433,39 @@ async def test_flow_user_init_data_valid(hass, mocker):
             CONF_DEVICE_ID: "deviceid",
             CONF_HOST: "hostname",
             CONF_LOCAL_KEY: TESTKEY,
+            CONF_PROTOCOL_VERSION: "auto",
+            CONF_POLL_ONLY: False,
+            CONF_KEEP_LAST_STATE: False,
+            CONF_SLEEPING_POLL_INTERVAL: 300,
+            CONF_SKIP_LIVE_CONNECTION_TEST: False,
+        },
+    )
+    assert "form" == result["type"]
+    assert "select_type" == result["step_id"]
+
+
+@pytest.mark.asyncio
+async def test_flow_user_init_can_skip_live_connection_test(hass, mocker):
+    """Test sleeping devices can proceed without a live connection response."""
+    mocker.patch(
+        "custom_components.tuya_local.config_flow.async_test_connection",
+        return_value=None,
+    )
+
+    flow = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "local"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        flow["flow_id"],
+        user_input={
+            CONF_DEVICE_ID: "deviceid",
+            CONF_HOST: "hostname",
+            CONF_LOCAL_KEY: TESTKEY,
+            CONF_PROTOCOL_VERSION: "auto",
+            CONF_POLL_ONLY: False,
+            CONF_KEEP_LAST_STATE: True,
+            CONF_SLEEPING_POLL_INTERVAL: 600,
+            CONF_SKIP_LIVE_CONNECTION_TEST: True,
         },
     )
     assert "form" == result["type"]

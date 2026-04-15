@@ -43,6 +43,7 @@
                     "poll_only": "Poll only (try this if your device does not work fully)",
                     "keep_last_state": "Keep last known state for sleeping/low-power devices",
                     "sleeping_poll_interval": "Retry interval for sleeping devices in seconds (0 disables the extra backoff)",
+                    "skip_live_connection_test": "Sleeping device: skip the live connection test during setup",
                     "device_cid": "Sub device node_id or uuid (for devices connected via gateway)"
                 }
             },

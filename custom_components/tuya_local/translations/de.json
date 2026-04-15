@@ -43,6 +43,7 @@
                     "poll_only": "Nur Abfrage (versuchen Sie dies, wenn Ihr Gerät nicht vollständig funktioniert)",
                     "keep_last_state": "Letzten bekannten Zustand für Schlaf-/Low-Power-Geräte beibehalten",
                     "sleeping_poll_interval": "Wiederholungsintervall für Schlafgeräte in Sekunden (0 deaktiviert den zusätzlichen Backoff)",
+                    "skip_live_connection_test": "Schlafgerät: Live-Verbindungstest während der Einrichtung überspringen",
                     "device_cid": "Sub Geräte node_id oder uuid (für Geräte, die über ein Gateway angeschlossen sind)"
                 }
             },
