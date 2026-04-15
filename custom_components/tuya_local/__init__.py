@@ -897,7 +897,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         raise ConfigEntryNotReady("tuya-local device not ready") from e
 
     if not device.has_returned_state:
-        raise ConfigEntryNotReady("tuya-local device offline")
+        if config.get(CONF_KEEP_LAST_STATE, False):
+            _LOGGER.info(
+                "%s did not return state during setup; starting in sleeping-device standby mode",
+                entry.title,
+            )
+        else:
+            raise ConfigEntryNotReady("tuya-local device offline")
 
     device_conf = await hass.async_add_executor_job(
         get_config,

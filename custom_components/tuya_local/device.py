@@ -320,7 +320,6 @@ class TuyaLocalDevice(object):
         return (
             self._keep_last_state
             and self._last_connection_failed
-            and self._has_restorable_state()
             and self._SLEEPING_RETRY_INTERVAL > 0
             and not self._get_pending_updates()
             and now < self._next_sleeping_retry
@@ -730,7 +729,7 @@ class TuyaLocalDevice(object):
                     preserve_state = self._keep_last_state and self._has_restorable_state()
                     self._reset_cached_state(preserve_state)
                     self._last_connection_failed = True
-                    if preserve_state:
+                    if self._keep_last_state and self._SLEEPING_RETRY_INTERVAL > 0:
                         self._next_sleeping_retry = (
                             time() + self._SLEEPING_RETRY_INTERVAL
                         )
@@ -745,6 +744,12 @@ class TuyaLocalDevice(object):
                     if preserve_state:
                         _LOGGER.info(
                             "%s is unreachable; keeping last known state and retrying in %ss",
+                            self.name,
+                            self._SLEEPING_RETRY_INTERVAL,
+                        )
+                    elif self._keep_last_state and self._SLEEPING_RETRY_INTERVAL > 0:
+                        _LOGGER.info(
+                            "%s is unreachable during sleeping-device startup; deferring retries for %ss",
                             self.name,
                             self._SLEEPING_RETRY_INTERVAL,
                         )

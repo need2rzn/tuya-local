@@ -190,7 +190,24 @@ def test_sleeping_retry_requires_cached_state(subject):
     subject._last_connection_failed = True
     subject._next_sleeping_retry = time() + 300
 
-    assert subject._should_defer_sleeping_retry(time()) is False
+    assert subject._should_defer_sleeping_retry(time()) is True
+
+
+@pytest.mark.asyncio
+async def test_sleeping_device_without_cached_state_still_enters_backoff(subject, mock_api):
+    subject._keep_last_state = True
+    subject._cached_state = {"updated_at": 0}
+    mock_api().status.side_effect = [
+        Exception("Error"),
+        Exception("Error"),
+        Exception("Error"),
+    ]
+
+    await subject.async_refresh()
+
+    assert subject._cached_state == {"updated_at": 0}
+    assert subject._last_connection_failed is True
+    assert subject._next_sleeping_retry > time()
 
 
 @pytest.mark.asyncio
