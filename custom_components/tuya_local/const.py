@@ -2,6 +2,7 @@ DOMAIN = "tuya_local"
 DATA_STORE = "store"
 
 CONF_DEVICE_ID = "device_id"
+CONF_INITIAL_DPS_CACHE = "initial_dps_cache"
 CONF_LOCAL_KEY = "local_key"
 CONF_TYPE = "type"
 CONF_MANUFACTURER = "manufacturer"

@@ -30,6 +30,7 @@ from .const import (
     API_PROTOCOL_VERSIONS,
     CONF_DEVICE_CID,
     CONF_DEVICE_ID,
+    CONF_INITIAL_DPS_CACHE,
     CONF_KEEP_LAST_STATE,
     CONF_LOCAL_KEY,
     CONF_MANUFACTURER,
@@ -626,8 +627,11 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             title = user_input[CONF_NAME]
             del user_input[CONF_NAME]
+            entry_data = {**self.data, **user_input}
+            if self.device and self.device.has_returned_state:
+                entry_data[CONF_INITIAL_DPS_CACHE] = self.device._get_cached_state()
             return self.async_create_entry(
-                title=title, data={**self.data, **user_input}
+                title=title, data=entry_data
             )
         default_name = config.name
         if self.__cloud_device and self.__cloud_device.get("name"):

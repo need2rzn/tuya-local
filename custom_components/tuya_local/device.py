@@ -21,6 +21,7 @@ from .const import (
     API_PROTOCOL_VERSIONS,
     CONF_DEVICE_CID,
     CONF_DEVICE_ID,
+    CONF_INITIAL_DPS_CACHE,
     CONF_KEEP_LAST_STATE,
     CONF_LOCAL_KEY,
     CONF_MANUFACTURER,
@@ -965,6 +966,20 @@ def setup_device(hass: HomeAssistant, config: dict):
         keep_last_state=config.get(CONF_KEEP_LAST_STATE, False),
         sleeping_poll_interval=config.get(CONF_SLEEPING_POLL_INTERVAL, 300),
     )
+    initial_cache = config.get(CONF_INITIAL_DPS_CACHE)
+    if isinstance(initial_cache, dict) and any(
+        key != "updated_at" for key in initial_cache
+    ):
+        device._cached_state = initial_cache.copy()
+        device._cached_state["updated_at"] = float(
+            device._cached_state.get("updated_at") or time()
+        )
+        device._last_full_poll = device._cached_state["updated_at"]
+        _LOGGER.info(
+            "%s restoring cached setup state with keys %s",
+            device.name,
+            sorted(str(key) for key in device._cached_state.keys()),
+        )
     hass.data[DOMAIN][get_device_id(config)] = {
         "device": device,
         "tuyadevice": device._api,
