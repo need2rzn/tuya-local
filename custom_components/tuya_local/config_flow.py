@@ -670,8 +670,6 @@ class OptionsFlowHandler(OptionsFlow):
             if device:
                 return self.async_create_entry(title="", data=user_input)
             else:
-                if user_input.get(CONF_SKIP_LIVE_CONNECTION_TEST, False):
-                    return self.async_create_entry(title="", data=user_input)
                 errors["base"] = "connection"
 
         schema = {
@@ -695,10 +693,6 @@ class OptionsFlowHandler(OptionsFlow):
                 CONF_SLEEPING_POLL_INTERVAL,
                 default=config.get(CONF_SLEEPING_POLL_INTERVAL, 300),
             ): SLEEPING_POLL_INTERVAL_SCHEMA,
-            vol.Required(
-                CONF_SKIP_LIVE_CONNECTION_TEST,
-                default=config.get(CONF_SKIP_LIVE_CONNECTION_TEST, False),
-            ): bool,
         }
         cfg = await self.hass.async_add_executor_job(
             get_config,
