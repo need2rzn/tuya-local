@@ -6,7 +6,7 @@ import asyncio
 import logging
 from asyncio.exceptions import CancelledError
 from threading import Lock
-from time import time
+from time import monotonic, time
 
 import tinytuya
 from homeassistant.const import (
@@ -271,19 +271,65 @@ class TuyaLocalDevice(object):
                         log_json(poll),
                     )
                     full_poll = poll.pop("full_poll", False)
+                    loop_started = monotonic()
                     self._cached_state = self._cached_state | poll
                     self._cached_state["updated_at"] = time()
                     self._remove_properties_from_pending_updates(poll)
+                    _LOGGER.debug(
+                        "%s receive_loop stage=cache_updated full_poll=%s keys=%s child_count=%s",
+                        self.name,
+                        full_poll,
+                        sorted(str(key) for key in poll.keys()),
+                        len(self._children),
+                    )
 
                     for entity in self._children:
+                        entity_name = getattr(entity, "entity_id", None) or getattr(
+                            entity, "name", entity.__class__.__name__
+                        )
+                        entity_started = monotonic()
+                        _LOGGER.debug(
+                            "%s receive_loop stage=entity_begin entity=%s full_poll=%s",
+                            self.name,
+                            entity_name,
+                            full_poll,
+                        )
                         # let entities trigger off poll contents directly
                         entity.on_receive(poll, full_poll)
+                        _LOGGER.debug(
+                            "%s receive_loop stage=entity_after_on_receive entity=%s elapsed=%.4fs",
+                            self.name,
+                            entity_name,
+                            monotonic() - entity_started,
+                        )
                         # clear non-persistant dps that were not in a full poll
                         if full_poll:
                             for dp in entity._config.dps():
                                 if not dp.persist and dp.id not in poll:
                                     self._cached_state.pop(dp.id, None)
+                            _LOGGER.debug(
+                                "%s receive_loop stage=entity_after_full_poll_cleanup entity=%s elapsed=%.4fs",
+                                self.name,
+                                entity_name,
+                                monotonic() - entity_started,
+                            )
+                        _LOGGER.debug(
+                            "%s receive_loop stage=entity_before_schedule entity=%s",
+                            self.name,
+                            entity_name,
+                        )
                         entity.schedule_update_ha_state()
+                        _LOGGER.debug(
+                            "%s receive_loop stage=entity_after_schedule entity=%s elapsed=%.4fs",
+                            self.name,
+                            entity_name,
+                            monotonic() - entity_started,
+                        )
+                    _LOGGER.debug(
+                        "%s receive_loop stage=complete elapsed=%.4fs",
+                        self.name,
+                        monotonic() - loop_started,
+                    )
                 else:
                     _LOGGER.debug(
                         "%s received non data %s",
