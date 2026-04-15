@@ -155,6 +155,42 @@ async def test_refresh_preserves_cache_for_sleeping_devices(subject, mock_api):
     assert subject._cached_state["updated_at"] == pytest.approx(time(), abs=2)
     assert subject._pending_updates == {}
     assert subject._last_connection_failed is True
+    assert subject._next_sleeping_retry > time()
+
+
+@pytest.mark.asyncio
+async def test_successful_refresh_clears_sleeping_retry_backoff(subject, mock_api):
+    subject._keep_last_state = True
+    subject._cached_state = {"1": True, "updated_at": time() - 60}
+    subject._last_connection_failed = True
+    subject._next_sleeping_retry = time() + 300
+    mock_api().status.return_value = {"dps": {"1": False}}
+
+    await subject.async_refresh()
+
+    assert subject._cached_state["1"] is False
+    assert subject._last_connection_failed is False
+    assert subject._next_sleeping_retry == 0
+
+
+def test_sleeping_retry_can_be_disabled(subject):
+    subject._keep_last_state = True
+    subject._SLEEPING_RETRY_INTERVAL = 0
+    subject._cached_state = {"1": True, "updated_at": time()}
+    subject._last_connection_failed = True
+    subject._next_sleeping_retry = time() + 300
+
+    assert subject._should_defer_sleeping_retry(time()) is False
+
+
+def test_sleeping_retry_requires_cached_state(subject):
+    subject._keep_last_state = True
+    subject._SLEEPING_RETRY_INTERVAL = 300
+    subject._cached_state = {"updated_at": time()}
+    subject._last_connection_failed = True
+    subject._next_sleeping_retry = time() + 300
+
+    assert subject._should_defer_sleeping_retry(time()) is False
 
 
 @pytest.mark.asyncio

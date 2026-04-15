@@ -36,6 +36,7 @@ from .const import (
     CONF_MODEL,
     CONF_POLL_ONLY,
     CONF_PROTOCOL_VERSION,
+    CONF_SLEEPING_POLL_INTERVAL,
     CONF_TYPE,
     CONF_USER_CODE,
     DATA_STORE,
@@ -50,6 +51,7 @@ DEVICE_DETAILS_URL = (
     "https://github.com/make-all/tuya-local/blob/main/DEVICE_DETAILS.md"
     "#finding-your-device-id-and-local-key"
 )
+SLEEPING_POLL_INTERVAL_SCHEMA = vol.All(vol.Coerce(int), vol.Range(min=0))
 
 
 class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
@@ -358,6 +360,7 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
         proto_opts = {"default": "auto"}
         polling_opts = {"default": False}
         keep_state_opts = {"default": False}
+        sleeping_poll_opts = {"default": 300}
         devcid_opts = {}
 
         if self.__cloud_device is not None:
@@ -417,6 +420,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                 keep_state_opts["default"] = user_input.get(
                     CONF_KEEP_LAST_STATE, False
                 )
+                sleeping_poll_opts["default"] = user_input.get(
+                    CONF_SLEEPING_POLL_INTERVAL, 300
+                )
 
         return self.async_show_form(
             step_id="local",
@@ -431,6 +437,9 @@ class ConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     ): vol.In(["auto"] + [str(v) for v in API_PROTOCOL_VERSIONS]),
                     vol.Required(CONF_POLL_ONLY, **polling_opts): bool,
                     vol.Required(CONF_KEEP_LAST_STATE, **keep_state_opts): bool,
+                    vol.Required(
+                        CONF_SLEEPING_POLL_INTERVAL, **sleeping_poll_opts
+                    ): SLEEPING_POLL_INTERVAL_SCHEMA,
                     vol.Optional(CONF_DEVICE_CID, **devcid_opts): str,
                 }
             ),
@@ -624,6 +633,10 @@ class OptionsFlowHandler(OptionsFlow):
                 CONF_KEEP_LAST_STATE,
                 default=config.get(CONF_KEEP_LAST_STATE, False),
             ): bool,
+            vol.Required(
+                CONF_SLEEPING_POLL_INTERVAL,
+                default=config.get(CONF_SLEEPING_POLL_INTERVAL, 300),
+            ): SLEEPING_POLL_INTERVAL_SCHEMA,
         }
         cfg = await self.hass.async_add_executor_job(
             get_config,
@@ -654,6 +667,7 @@ def create_test_device(hass: HomeAssistant, config: dict):
         hass,
         True,
         keep_last_state=config.get(CONF_KEEP_LAST_STATE, False),
+        sleeping_poll_interval=config.get(CONF_SLEEPING_POLL_INTERVAL, 300),
     )
 
     return device

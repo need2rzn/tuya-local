@@ -8,6 +8,7 @@ CONF_MANUFACTURER = "manufacturer"
 CONF_MODEL = "model"
 CONF_POLL_ONLY = "poll_only"
 CONF_KEEP_LAST_STATE = "keep_last_state"
+CONF_SLEEPING_POLL_INTERVAL = "sleeping_poll_interval"
 CONF_DEVICE_CID = "device_cid"
 CONF_PROTOCOL_VERSION = "protocol_version"
 API_PROTOCOL_VERSIONS = [3.3, 3.1, 3.2, 3.4, 3.5, 3.22]

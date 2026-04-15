@@ -27,6 +27,7 @@ from .const import (
     CONF_MODEL,
     CONF_POLL_ONLY,
     CONF_PROTOCOL_VERSION,
+    CONF_SLEEPING_POLL_INTERVAL,
     DOMAIN,
 )
 from .helpers.config import get_device_id
@@ -55,6 +56,7 @@ class TuyaLocalDevice(object):
         manufacturer=None,
         model=None,
         keep_last_state=False,
+        sleeping_poll_interval=300,
     ):
         """
         Represents a Tuya-based device.
@@ -72,6 +74,9 @@ class TuyaLocalDevice(object):
             model (str | None): The device model, if known.
             keep_last_state (bool): Preserve the last valid state for devices
                 that sleep between updates instead of clearing the cache.
+            sleeping_poll_interval (int): Seconds to wait before retrying a
+                sleeping or low-power device after a failed poll while using
+                the cached state. Set to 0 to disable this delay.
         """
         self._name = name
         self._manufacturer = manufacturer
@@ -156,12 +161,14 @@ class TuyaLocalDevice(object):
         self._FAKE_IT_TIMEOUT = 5
         self._CACHE_TIMEOUT = 30
         self._HEARTBEAT_INTERVAL = 10
+        self._SLEEPING_RETRY_INTERVAL = max(int(sleeping_poll_interval or 0), 0)
         # More attempts are needed in auto mode so we can cycle through all
         # the possibilities a couple of times
         self._AUTO_CONNECTION_ATTEMPTS = len(API_PROTOCOL_VERSIONS) * 2 + 1
         self._SINGLE_PROTO_CONNECTION_ATTEMPTS = 3
         # The number of failures from a working protocol before retrying other protocols.
         self._AUTO_FAILURE_RESET_COUNT = 10
+        self._next_sleeping_retry = 0
         self._lock = Lock()
 
     @property
@@ -306,6 +313,19 @@ class TuyaLocalDevice(object):
     def resume(self):
         self._temporary_poll = False
 
+    def _has_restorable_state(self):
+        return any(key != "updated_at" for key in self._cached_state)
+
+    def _should_defer_sleeping_retry(self, now):
+        return (
+            self._keep_last_state
+            and self._last_connection_failed
+            and self._has_restorable_state()
+            and self._SLEEPING_RETRY_INTERVAL > 0
+            and not self._get_pending_updates()
+            and now < self._next_sleeping_retry
+        )
+
     async def async_receive(self):
         """Receive messages from a persistent connection asynchronously."""
         # If we didn't yet get any state from the device, we may need to
@@ -322,7 +342,7 @@ class TuyaLocalDevice(object):
         last_heartbeat = self._cached_state.get("updated_at", 0)
         while self._running:
             error_count = self._api_working_protocol_failures
-            force_backoff = False
+            backoff_delay = 0.1
             try:
                 await self._api_lock.acquire()
                 last_cache = self._cached_state.get("updated_at", 0)
@@ -340,6 +360,13 @@ class TuyaLocalDevice(object):
                     self._api.set_socketPersistent(persist)
                     if self._api.parent:
                         self._api.parent.set_socketPersistent(persist)
+
+                if self._should_defer_sleeping_retry(now):
+                    backoff_delay = min(
+                        max(self._next_sleeping_retry - now, 1),
+                        self._SLEEPING_RETRY_INTERVAL,
+                    )
+                    continue
 
                 needs_full_poll = now - self._last_full_poll > self._CACHE_TIMEOUT
                 if now - last_cache > self._CACHE_TIMEOUT or (
@@ -365,7 +392,7 @@ class TuyaLocalDevice(object):
                     self._last_full_poll = now
                     last_heartbeat = now  # reset heartbeat timer on full poll
                     if poll is None and self._last_connection_failed:
-                        force_backoff = True
+                        backoff_delay = 5
                 elif persist:
                     if now - last_heartbeat > self._HEARTBEAT_INTERVAL:
                         await self._hass.async_add_executor_job(
@@ -381,7 +408,7 @@ class TuyaLocalDevice(object):
                     if poll and "Err" in poll and poll["Err"] == "904":
                         poll = None
                 else:
-                    force_backoff = True
+                    backoff_delay = 5
                     poll = None
 
                 if poll:
@@ -426,13 +453,13 @@ class TuyaLocalDevice(object):
                 self._api.set_socketPersistent(False)
                 if self._api.parent:
                     self._api.parent.set_socketPersistent(False)
-                force_backoff = True
+                backoff_delay = 5
             finally:
                 if self._api_lock.locked():
                     self._api_lock.release()
             if not self.has_returned_state:
-                force_backoff = True
-            await asyncio.sleep(5 if force_backoff else 0.1)
+                backoff_delay = max(backoff_delay, 5)
+            await asyncio.sleep(backoff_delay)
 
         # Close the persistent connection when exiting the loop
         self._api.set_socketPersistent(False)
@@ -684,6 +711,7 @@ class TuyaLocalDevice(object):
                     self._api_protocol_working = True
                     self._api_working_protocol_failures = 0
                     self._last_connection_failed = False
+                    self._next_sleeping_retry = 0
                     return retval
             except Exception as e:
                 _LOGGER.debug(
@@ -699,11 +727,13 @@ class TuyaLocalDevice(object):
                     self._api.parent.set_socketPersistent(False)
 
                 if i + 1 == connections:
-                    preserve_state = self._keep_last_state and any(
-                        key != "updated_at" for key in self._cached_state
-                    )
+                    preserve_state = self._keep_last_state and self._has_restorable_state()
                     self._reset_cached_state(preserve_state)
                     self._last_connection_failed = True
+                    if preserve_state:
+                        self._next_sleeping_retry = (
+                            time() + self._SLEEPING_RETRY_INTERVAL
+                        )
                     self._api_working_protocol_failures += 1
                     if (
                         self._api_working_protocol_failures
@@ -712,7 +742,13 @@ class TuyaLocalDevice(object):
                         self._api_protocol_working = False
                         for entity in self._children:
                             entity.async_schedule_update_ha_state()
-                    if self._api_working_protocol_failures == 1 and not (
+                    if preserve_state:
+                        _LOGGER.info(
+                            "%s is unreachable; keeping last known state and retrying in %ss",
+                            self.name,
+                            self._SLEEPING_RETRY_INTERVAL,
+                        )
+                    elif self._api_working_protocol_failures == 1 and not (
                         last_err_code == "914" and self._protocol_configured == "auto"
                     ):
                         _LOGGER.error(error_message)
@@ -813,6 +849,7 @@ def setup_device(hass: HomeAssistant, config: dict):
         manufacturer=config.get(CONF_MANUFACTURER),
         model=config.get(CONF_MODEL),
         keep_last_state=config.get(CONF_KEEP_LAST_STATE, False),
+        sleeping_poll_interval=config.get(CONF_SLEEPING_POLL_INTERVAL, 300),
     )
     hass.data[DOMAIN][get_device_id(config)] = {
         "device": device,
